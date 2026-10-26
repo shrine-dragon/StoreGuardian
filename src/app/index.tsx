@@ -1,53 +1,75 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 export default function HomeScreen() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>万引きGメン：日常の活躍</Text>
-        <Text style={styles.subtitle}>新人Gメンとして店舗に潜入せよ！</Text>
+    <ImageBackground
+      source={require('../../assets/images/shoplifting-woman.png')}
+      style={styles.background}
+      imageStyle={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <Image
+          source={require('../../assets/images/StoreGuardian_second_logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-        {/* キャラ選択画面へ進むボタン（仮） */}
-        <TouchableOpacity style={styles.button} onPress={() => alert('ボタンが押されました！')}>
+        <Text style={styles.subtitle}>
+          Gメンとして店舗に潜入{'\n'}万引き犯を確保せよ！
+        </Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            // TODO: ゲーム画面へ遷移する処理などを書く場所
+            alert('ゲームをはじめる！')
+          }}
+        >
           <Text style={styles.buttonText}>ゲームをはじめる</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
-  );
+    </ImageBackground>
+  )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: '#fff',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#ffffff'
   },
-  content: {
+  backgroundImage: {
+    opacity: 0.4,
+    resizeMode: 'cover', // 画像の比率を保ったままスマホの画面いっぱいに拡大する
+  },
+  container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+  logo: {
+    width: 320,
+    height: 180,
+    resizeMode: 'contain',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
+    fontSize: 23,
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   button: {
-    backgroundColor: '#ff4757',
-    paddingVertical: 12,
+    backgroundColor: '#ff4d4f',
     paddingHorizontal: 30,
+    paddingVertical: 15,
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: 'bold',
   },
-});
+})
