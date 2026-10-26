@@ -1,6 +1,39 @@
-import { Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import {
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 
 export default function HomeScreen() {
+  // ランダムに選ばれたサブタイトルを保持するステート
+  const [randomSubtitle, setRandomSubtitle] = useState('')
+
+  // 画面が開いたときに1回だけランダムなセリフを決定する
+  useEffect(() => {
+    const subtitles = [
+      // ゲームを一度もプレイしていない状態
+      'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
+      // ランダム表示
+      '買い物客に紛れて\n万引き犯を逮捕せよ！',
+      // 新人・初心者
+      '新人万引きGメンよ\nお店の治安を守れ！',
+      // 中堅
+      '万引きを見逃すな\n店内の平和は君が守る！',
+      // ベテラン
+      '万引き常習犯に\n正義の鉄槌を下せ！',
+      // レジェンド
+      '大量万引き犯を見つけ\n警察に引き渡せ！',
+    ]
+    // 3つのうちからランダムに1つを選ぶ
+    // floor →小数点以下を切り捨てる関数
+    const randomIndex = Math.floor(Math.random() * subtitles.length)
+    setRandomSubtitle(subtitles[randomIndex])
+  }, [])
+
   return (
     <ImageBackground
       source={require('../../assets/images/shoplifting-woman.png')}
@@ -14,9 +47,8 @@ export default function HomeScreen() {
           resizeMode="contain"
         />
 
-        <Text style={styles.subtitle}>
-          Gメンとして店舗に潜入{'\n'}万引き犯を確保せよ！
-        </Text>
+        {/* ランダムに選ばれたサブタイトルを表示 */}
+        <Text style={styles.subtitle}>{randomSubtitle}</Text>
 
         <TouchableOpacity
           style={styles.button}
@@ -37,11 +69,11 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
   },
   backgroundImage: {
-    opacity: 0.4,
-    resizeMode: 'cover', // 画像の比率を保ったままスマホの画面いっぱいに拡大する
+    opacity: 0.5,
+    resizeMode: 'cover',
   },
   container: {
     flex: 1,
