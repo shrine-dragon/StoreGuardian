@@ -53,11 +53,29 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            // TODO: ゲーム画面へ遷移する処理などを書く場所
-            alert('ゲームをはじめる！')
+            // ゲームを一からプレイする
+            // 全ゲームユーザー共通で表示される内容
+            alert(
+              'ゲームをはじめからプレイします。これまでのデータは削除されます。',
+            )
           }}
         >
-          <Text style={styles.buttonText}>ゲームをはじめる</Text>
+          <Text style={[styles.buttonText, styles.fromTheStart]}>
+            はじめから
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            // ゲームを続きからプレイする
+            // セーブデータがある場合に表示される内容
+            alert('ゲームを続きからプレイします。')
+          }}
+        >
+          <Text style={[styles.buttonText, styles.fromTheContinuation]}>
+            続きから
+          </Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -98,10 +116,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
+    marginBottom: 15,
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 })
