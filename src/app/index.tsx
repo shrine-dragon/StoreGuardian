@@ -1,5 +1,8 @@
+// Reactライブラリから、アプリの「状態（データ）」や「画面が開いたときの処理」といった、プログラムの頭脳・仕組みを制御するための機能を取り出す。
 import { useEffect, useState } from 'react'
+// フレームワークであるreact-nativeから、テキスト・画像・ボタンなどのパーツ・デザインの道具を取り出す。
 import {
+  ActivityIndicator,
   Image,
   ImageBackground,
   StyleSheet,
@@ -9,11 +12,15 @@ import {
 } from 'react-native'
 
 export default function HomeScreen() {
-  // ランダムに選ばれたサブタイトルを保持するステート
+  // 1. ローディング中かどうかを管理するステート（最初は true = ローディング中）
+  const [isLoading, setIsLoading] = useState(true)
+
+  // ランダムなサブタイトルのステート
   const [randomSubtitle, setRandomSubtitle] = useState('')
 
-  // 画面が開いたときに1回だけランダムなセリフを決定する
+  // 2. アプリ起動時にローディング演出とサブタイトルのランダム選択を行う
   useEffect(() => {
+    // 6種類のサブタイトル
     const subtitles = [
       // ゲームを一度もプレイしていない状態
       'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
@@ -28,12 +35,30 @@ export default function HomeScreen() {
       // レジェンド
       '大量万引き犯を見つけ\n警察に引き渡せ！',
     ]
-    // 3つのうちからランダムに1つを選ぶ
-    // floor →小数点以下を切り捨てる関数
     const randomIndex = Math.floor(Math.random() * subtitles.length)
     setRandomSubtitle(subtitles[randomIndex])
+
+    // 3. タイマーを使って、1.5秒（1500ミリ秒）後にローディングを終了させる
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+
+    // クリーンアップ処理
+    return () => clearTimeout(timer)
   }, [])
 
+  // 【A】isLoading が true のときの「Now Loading画面」
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        {/* クルクル回るインジケーター（colorで色を変更可能） */}
+        <ActivityIndicator size="large" color="white" />
+        <Text style={styles.loadingText}>NOW LOADING...</Text>
+      </View>
+    )
+  }
+
+  // 【B】isLoading が false になったあとの「通常のトップ画面」
   return (
     <ImageBackground
       source={require('../../assets/images/shoplifting-woman.png')}
@@ -47,35 +72,26 @@ export default function HomeScreen() {
           resizeMode="contain"
         />
 
-        {/* ランダムに選ばれたサブタイトルを表示 */}
         <Text style={styles.subtitle}>{randomSubtitle}</Text>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            // ゲームを一からプレイする
-            // 全ゲームユーザー共通で表示される内容
             alert(
               'ゲームをはじめからプレイします。これまでのデータは削除されます。',
             )
           }}
         >
-          <Text style={[styles.buttonText, styles.fromTheStart]}>
-            はじめから
-          </Text>
+          <Text style={styles.buttonText}>はじめから</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
-            // ゲームを続きからプレイする
-            // セーブデータがある場合に表示される内容
             alert('ゲームを続きからプレイします。')
           }}
         >
-          <Text style={[styles.buttonText, styles.fromTheContinuation]}>
-            続きから
-          </Text>
+          <Text style={styles.buttonText}>続きから</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -83,6 +99,20 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#111111',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+    letterSpacing: 2,
+  },
+
   background: {
     flex: 1,
     width: '100%',
