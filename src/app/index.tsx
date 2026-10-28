@@ -1,6 +1,5 @@
-// Reactライブラリから、アプリの「状態（データ）」や「画面が開いたときの処理」といった、プログラムの頭脳・仕組みを制御するための機能を取り出す。
+import { Stack } from 'expo-router'
 import { useEffect, useState } from 'react'
-// フレームワークであるreact-nativeから、テキスト・画像・ボタンなどのパーツ・デザインの道具を取り出す。
 import {
   ActivityIndicator,
   Image,
@@ -11,13 +10,20 @@ import {
   View,
 } from 'react-native'
 
-import { Stack } from 'expo-router'
-
 export default function HomeScreen() {
-  const [isLoading, setIsLoading] = useState(true)
+  // 画面の状態を管理するステート
+  // 'warning': 最初の警告画面
+  // 'loading': ローディング画面
+  // 'home': 通常のトップ画面
+  const [currentStep, setCurrentStep] = useState<
+    'warning' | 'loading' | 'home'
+  >('warning')
+
+  // ランダムなサブタイトルのステート
   const [randomSubtitle, setRandomSubtitle] = useState('')
 
   useEffect(() => {
+    // サブタイトルの準備
     const subtitles = [
       // ゲームを一度もプレイしていない状態
       'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
@@ -34,24 +40,55 @@ export default function HomeScreen() {
     ]
     const randomIndex = Math.floor(Math.random() * subtitles.length)
     setRandomSubtitle(subtitles[randomIndex])
-
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
-
-    return () => clearTimeout(timer)
   }, [])
+
+  // 警告画面から「進む」ボタンが押されたときの処理
+  const handleAcknowledgeWarning = () => {
+    setCurrentStep('loading') // ローディング画面へ切り替え
+
+    // 1.5秒のローディング後にトップ画面へ切り替える
+    setTimeout(() => {
+      setCurrentStep('home')
+    }, 1500)
+  }
 
   return (
     <>
-      {/* ローディング中の画面 */}
-      {isLoading ? (
+      {/* 1. 警告文画面（一番最初に表示）*/}
+      {currentStep === 'warning' && (
+        <View style={styles.warningContainer}>
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>【法的注意書き】</Text>
+            <Text style={styles.warningText}>
+              万引きは窃盗罪です。{'\n'}
+              10年以下の拘禁刑または50万円以下の罰金が課せられます。{'\n\n'}
+              「少しなら盗んでも問題ない」という考えが貴方の人生を壊します。
+              {'\n\n'}
+              本アプリは万引きを推奨するものではございません。
+            </Text>
+
+            <TouchableOpacity
+              style={styles.warningButton}
+              onPress={handleAcknowledgeWarning}
+            >
+              <Text style={styles.warningButtonText}>
+                理解してゲームを始める
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 2. ローディング画面  */}
+      {currentStep === 'loading' && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="white" />
           <Text style={styles.loadingText}>NOW LOADING...</Text>
         </View>
-      ) : (
-        /* 3. 通常のトップ画面 */
+      )}
+
+      {/* 3. 通常のトップ画面 */}
+      {currentStep === 'home' && (
         <ImageBackground
           source={require('../../assets/images/shoplifting-woman.png')}
           style={styles.background}
@@ -93,6 +130,50 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // --- 警告画面用のスタイル ---
+  warningContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 25,
+  },
+  warningBox: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#1a1a1a',
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  warningTitle: {
+    color: '#ff4d4f',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  warningText: {
+    color: '#cccccc',
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 25,
+    textAlign: 'left',
+  },
+  warningButton: {
+    backgroundColor: '#ff4d4f',
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  warningButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  // --- ローディング画面用のスタイル ---
   loadingContainer: {
     flex: 1,
     backgroundColor: '#111111',
@@ -107,6 +188,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
+  // --- トップ画面用のスタイル ---
   background: {
     flex: 1,
     width: '100%',
