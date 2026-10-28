@@ -44,19 +44,6 @@ export default function HomeScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          // ヘッダーのタイトル部分にテキストではなく画像を配置する
-          headerTitle: () => (
-            <Image
-              source={require('../../assets/images/StoreGuardian-app-logo.png')}
-              style={{ width: 120, height: 40 }}
-              resizeMode="contain"
-            />
-          ),
-          headerTitleAlign: 'center', // ロゴを中央寄せにする場合
-        }}
-      />
       {/* ローディング中の画面 */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
