@@ -11,16 +11,13 @@ import {
   View,
 } from 'react-native'
 
-export default function HomeScreen() {
-  // 1. ローディング中かどうかを管理するステート（最初は true = ローディング中）
-  const [isLoading, setIsLoading] = useState(true)
+import { Stack } from 'expo-router'
 
-  // ランダムなサブタイトルのステート
+export default function HomeScreen() {
+  const [isLoading, setIsLoading] = useState(true)
   const [randomSubtitle, setRandomSubtitle] = useState('')
 
-  // 2. アプリ起動時にローディング演出とサブタイトルのランダム選択を行う
   useEffect(() => {
-    // 6種類のサブタイトル
     const subtitles = [
       // ゲームを一度もプレイしていない状態
       'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
@@ -38,63 +35,73 @@ export default function HomeScreen() {
     const randomIndex = Math.floor(Math.random() * subtitles.length)
     setRandomSubtitle(subtitles[randomIndex])
 
-    // 3. タイマーを使って、1.5秒（1500ミリ秒）後にローディングを終了させる
     const timer = setTimeout(() => {
       setIsLoading(false)
     }, 1500)
 
-    // クリーンアップ処理
     return () => clearTimeout(timer)
   }, [])
 
-  // 【A】isLoading が true のときの「Now Loading画面」
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        {/* クルクル回るインジケーター（colorで色を変更可能） */}
-        <ActivityIndicator size="large" color="white" />
-        <Text style={styles.loadingText}>NOW LOADING...</Text>
-      </View>
-    )
-  }
-
-  // 【B】isLoading が false になったあとの「通常のトップ画面」
   return (
-    <ImageBackground
-      source={require('../../assets/images/shoplifting-woman.png')}
-      style={styles.background}
-      imageStyle={styles.backgroundImage}
-    >
-      <View style={styles.container}>
-        <Image
-          source={require('../../assets/images/StoreGuardian_second_logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-
-        <Text style={styles.subtitle}>{randomSubtitle}</Text>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            alert(
-              'ゲームをはじめからプレイします。これまでのデータは削除されます。',
-            )
-          }}
+    <>
+      <Stack.Screen
+        options={{
+          // ヘッダーのタイトル部分にテキストではなく画像を配置する
+          headerTitle: () => (
+            <Image
+              source={require('../../assets/images/StoreGuardian-app-logo.png')}
+              style={{ width: 120, height: 40 }}
+              resizeMode="contain"
+            />
+          ),
+          headerTitleAlign: 'center', // ロゴを中央寄せにする場合
+        }}
+      />
+      {/* ローディング中の画面 */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={styles.loadingText}>NOW LOADING...</Text>
+        </View>
+      ) : (
+        /* 3. 通常のトップ画面 */
+        <ImageBackground
+          source={require('../../assets/images/shoplifting-woman.png')}
+          style={styles.background}
+          imageStyle={styles.backgroundImage}
         >
-          <Text style={styles.buttonText}>はじめから</Text>
-        </TouchableOpacity>
+          <View style={styles.container}>
+            <Image
+              source={require('../../assets/images/StoreGuardian_second_logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            alert('ゲームを続きからプレイします。')
-          }}
-        >
-          <Text style={styles.buttonText}>続きから</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+            <Text style={styles.subtitle}>{randomSubtitle}</Text>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                alert(
+                  'ゲームをはじめからプレイします。これまでのデータは削除されます。',
+                )
+              }}
+            >
+              <Text style={styles.buttonText}>はじめから</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                alert('ゲームを続きからプレイします。')
+              }}
+            >
+              <Text style={styles.buttonText}>続きから</Text>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+      )}
+    </>
   )
 }
 
