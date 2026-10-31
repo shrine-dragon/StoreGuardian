@@ -10,43 +10,57 @@ import {
   View,
 } from 'react-native'
 
+// 背景画像リスト（コンポーネントの外に定義し、無駄な再生成を防ぐ)
+const backgroundImages = [
+  require('../../assets/images/shoplifting-woman.png'),
+  require('../../assets/images/stop-text.png'),
+  require('../../assets/images/police-car.png'),
+]
+
 export default function HomeScreen() {
-  // 画面の状態を管理するステート
-  // 'warning': 最初の警告画面
-  // 'loading': ローディング画面
-  // 'home': 通常のトップ画面
   const [currentStep, setCurrentStep] = useState<
     'warning' | 'loading' | 'home'
   >('warning')
 
-  // ランダムなサブタイトルのステート
   const [randomSubtitle, setRandomSubtitle] = useState('')
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
-    // サブタイトルの準備
+    // 1. 画像のプリロード（事前読み込み）処理
+    backgroundImages.forEach((img) => {
+      const resolveAsset = Image.resolveAssetSource(img)
+      if (resolveAsset && resolveAsset.uri) {
+        Image.prefetch(resolveAsset.uri)
+      }
+    })
+
+    // 2. サブタイトルの準備
     const subtitles = [
-      // ゲームを一度もプレイしていない状態
       'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
-      // ランダム表示
       '買い物客に紛れて\n万引き犯を逮捕せよ！',
-      // 新人・初心者
       '新人万引きGメンよ\nお店の治安を守れ！',
-      // 中堅
       '万引きを見逃すな\n店内の平和は君が守る！',
-      // ベテラン
       '万引き常習犯に\n正義の鉄槌を下せ！',
-      // レジェンド
       '大量万引き犯を見つけ\n警察に引き渡せ！',
     ]
-    const randomIndex = Math.floor(Math.random() * subtitles.length)
-    setRandomSubtitle(subtitles[randomIndex])
+    const randomSubIndex = Math.floor(Math.random() * subtitles.length)
+    setRandomSubtitle(subtitles[randomSubIndex])
   }, [])
 
-  // 警告画面から「進む」ボタンが押されたときの処理
-  const handleAcknowledgeWarning = () => {
-    setCurrentStep('loading') // ローディング画面へ切り替え
+  // トップ画面が表示されている間、3秒ごとに画像を切り替える処理
+  useEffect(() => {
+    if (currentStep !== 'home') return
 
-    // 1.5秒のローディング後にトップ画面へ切り替える
+    const slideTimer = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length)
+    }, 3000)
+
+    return () => clearInterval(slideTimer)
+  }, [currentStep])
+
+  const handleAcknowledgeWarning = () => {
+    setCurrentStep('loading')
+
     setTimeout(() => {
       setCurrentStep('home')
     }, 1500)
@@ -54,7 +68,9 @@ export default function HomeScreen() {
 
   return (
     <>
-      {/* 1. 警告文画面（一番最初に表示）*/}
+      <Stack.Screen options={{ headerShown: false }} />
+
+      {/* 1. 警告文画面 */}
       {currentStep === 'warning' && (
         <View style={styles.warningContainer}>
           <View style={styles.warningBox}>
@@ -79,7 +95,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 2. ローディング画面  */}
+      {/* 2. ローディング画面 */}
       {currentStep === 'loading' && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="white" />
@@ -90,7 +106,7 @@ export default function HomeScreen() {
       {/* 3. 通常のトップ画面 */}
       {currentStep === 'home' && (
         <ImageBackground
-          source={require('../../assets/images/shoplifting-woman.png')}
+          source={backgroundImages[currentImageIndex]}
           style={styles.background}
           imageStyle={styles.backgroundImage}
         >
@@ -130,7 +146,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  // --- 警告画面用のスタイル ---
   warningContainer: {
     flex: 1,
     backgroundColor: '#000000',
@@ -172,8 +187,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
-  // --- ローディング画面用のスタイル ---
   loadingContainer: {
     flex: 1,
     backgroundColor: '#111111',
@@ -187,8 +200,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     letterSpacing: 2,
   },
-
-  // --- トップ画面用のスタイル ---
   background: {
     flex: 1,
     width: '100%',
@@ -196,7 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   backgroundImage: {
-    opacity: 0.5,
+    opacity: 0.4,
     resizeMode: 'cover',
   },
   container: {
