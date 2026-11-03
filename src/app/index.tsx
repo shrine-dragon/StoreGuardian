@@ -1,40 +1,34 @@
-import { Stack } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Image,
   ImageBackground,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native'
 
-// 背景画像リスト（コンポーネントの外に定義し、無駄な再生成を防ぐ)
-const backgroundImages = [
-  require('../../assets/images/shoplifting-woman.png'),
-  require('../../assets/images/stop-text.png'),
-  require('../../assets/images/police-car.png'),
-]
-
 export default function HomeScreen() {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState<
-    'warning' | 'loading' | 'home'
+    'warning' | 'terms' | 'loading' | 'home'
   >('warning')
 
   const [randomSubtitle, setRandomSubtitle] = useState('')
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  useEffect(() => {
-    // 1. 画像のプリロード（事前読み込み）処理
-    backgroundImages.forEach((img) => {
-      const resolveAsset = Image.resolveAssetSource(img)
-      if (resolveAsset && resolveAsset.uri) {
-        Image.prefetch(resolveAsset.uri)
-      }
-    })
+  // 背景画像リスト
+  const backgroundImages = [
+    require('../../assets/images/shoplifting-woman.png'),
+    require('../../assets/images/stop-text.png'),
+    require('../../assets/images/police-car.png'),
+  ]
 
-    // 2. サブタイトルの準備
+  useEffect(() => {
+    // サブタイトルの準備
     const subtitles = [
       'Gメンとして店舗に潜入\n万引き犯を確保せよ！',
       '買い物客に紛れて\n万引き犯を逮捕せよ！',
@@ -47,20 +41,30 @@ export default function HomeScreen() {
     setRandomSubtitle(subtitles[randomSubIndex])
   }, [])
 
-  // トップ画面が表示されている間、3秒ごとに画像を切り替える処理
+  // スライドショーのタイマー
   useEffect(() => {
     if (currentStep !== 'home') return
 
     const slideTimer = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length)
+      setCurrentImageIndex(
+        (prevIndex) => (prevIndex + 1) % backgroundImages.length,
+      )
     }, 3000)
 
     return () => clearInterval(slideTimer)
   }, [currentStep])
 
+  // 最初の警告画面から「進む」ボタンが押されたとき
   const handleAcknowledgeWarning = () => {
-    setCurrentStep('loading')
+    setCurrentStep('terms')
+  }
 
+  // 2. 文書確認モーダルで「同意する」ボタンが押されたとき
+  const handleAgreeTerms = () => {
+    setCurrentStep('loading') // ローディング画面へ切り替え
+
+    // 1.5秒のローディング後にトップ画面へ切り替える
+    // （※のちにここに「ニックネームが未登録ならニックネーム入力モーダルを開く」という判定を挟むことになります！）
     setTimeout(() => {
       setCurrentStep('home')
     }, 1500)
@@ -70,12 +74,12 @@ export default function HomeScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* 1. 警告文画面 */}
+      {/* 1. 最初の法的警告画面 */}
       {currentStep === 'warning' && (
-        <View style={styles.warningContainer}>
-          <View style={styles.warningBox}>
-            <Text style={styles.warningTitle}>【法的注意書き】</Text>
-            <Text style={styles.warningText}>
+        <View style={styles.overlayContainer}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>【法的注意書き】</Text>
+            <Text style={styles.modalText}>
               万引きは窃盗罪です。{'\n'}
               10年以下の拘禁刑または50万円以下の罰金が課せられます。{'\n\n'}
               「少しなら盗んでも問題ない」という考えが貴方の人生を壊します。
@@ -84,18 +88,57 @@ export default function HomeScreen() {
             </Text>
 
             <TouchableOpacity
-              style={styles.warningButton}
+              style={styles.primaryButton}
               onPress={handleAcknowledgeWarning}
             >
-              <Text style={styles.warningButtonText}>
-                理解してゲームを始める
-              </Text>
+              <Text style={styles.buttonText}>理解して次へ進む</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* 2. ローディング画面 */}
+      {/* 2. 文書確認用モーダル（check_documents_modal）*/}
+      {currentStep === 'terms' && (
+        <View style={styles.overlayContainer}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
+              利用規約・プライバシーポリシー
+            </Text>
+
+            <ScrollView
+              style={styles.termsScrollView}
+              contentContainerStyle={styles.termsScrollContent}
+            >
+              <Text style={styles.modalText}>
+                以下の
+                <Text
+                  style={styles.linkText}
+                  onPress={() => router.push('/terms')}
+                >
+                  利用規約
+                </Text>{' '}
+                と {/* プライバシーポリシーのリンク */}
+                <Text
+                  style={styles.linkText}
+                  onPress={() => router.push('/privacy-policy')}
+                >
+                  プライバシーポリシー
+                </Text>{' '}
+                を読み、内容が確認できましたら同意ボタンを押してください。
+              </Text>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleAgreeTerms}
+            >
+              <Text style={styles.buttonText}>同意して進む</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 3. ローディング画面 */}
       {currentStep === 'loading' && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="white" />
@@ -103,7 +146,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 3. 通常のトップ画面 */}
+      {/* 4. 通常のトップ画面 */}
       {currentStep === 'home' && (
         <ImageBackground
           source={backgroundImages[currentImageIndex]}
@@ -120,7 +163,7 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>{randomSubtitle}</Text>
 
             <TouchableOpacity
-              style={styles.button}
+              style={styles.actionButton}
               onPress={() => {
                 alert(
                   'ゲームをはじめからプレイします。これまでのデータは削除されます。',
@@ -131,7 +174,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.button}
+              style={styles.actionButton}
               onPress={() => {
                 alert('ゲームを続きからプレイします。')
               }}
@@ -146,47 +189,61 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  warningContainer: {
+  // --- モーダル共通の背景（黒半透明・または真っ黒） ---
+  overlayContainer: {
     flex: 1,
     backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 25,
   },
-  warningBox: {
+  modalBox: {
     width: '100%',
     maxWidth: 400,
+    maxHeight: '80%',
     backgroundColor: '#1a1a1a',
     padding: 20,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#333333',
   },
-  warningTitle: {
+  modalTitle: {
     color: '#ff4d4f',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
   },
-  warningText: {
+  modalText: {
     color: '#cccccc',
     fontSize: 14,
     lineHeight: 22,
-    marginBottom: 25,
     textAlign: 'left',
   },
-  warningButton: {
+  linkText: {
+    color: '#1890ff',
+    textDecorationLine: 'underline',
+    fontWeight: 'bold',
+  },
+  termsScrollView: {
+    maxHeight: 200,
+    marginBottom: 20,
+    backgroundColor: '#111111',
+    padding: 10,
+    borderRadius: 6,
+  },
+  termsScrollContent: {
+    paddingRight: 5,
+  },
+  primaryButton: {
     backgroundColor: '#ff4d4f',
     paddingVertical: 12,
     borderRadius: 6,
     alignItems: 'center',
+    marginTop: 10,
   },
-  warningButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+
+  // --- ローディング画面 ---
   loadingContainer: {
     flex: 1,
     backgroundColor: '#111111',
@@ -200,6 +257,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     letterSpacing: 2,
   },
+
+  // --- トップ画面 ---
   background: {
     flex: 1,
     width: '100%',
@@ -228,16 +287,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
   },
-  button: {
+  actionButton: {
     backgroundColor: '#ff4d4f',
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
     marginBottom: 15,
+    width: '100%',
+    maxWidth: 250,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },

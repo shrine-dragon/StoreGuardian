@@ -1,0 +1,23 @@
+{
+  "React Native Style": {
+    "prefix": "st",
+    "body": [
+      "style={styles.$1}"
+    ],
+    "description": "style={styles.xxx}"
+  },
+  "React Native Style Container": {
+    "prefix": "stc",
+    "body": [
+      "style={styles.container}"
+    ],
+    "description": "style={styles.container}"
+  },
+  "React Native Text": {
+    "prefix": "te",
+    "body": [
+      "<Text $1></Text>"
+    ],
+    "description": "<Text>xxx</Text>"
+  }
+}
