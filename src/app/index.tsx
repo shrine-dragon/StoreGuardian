@@ -7,18 +7,30 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
 
+import { loadGameData, saveGameData } from '../utils/storage'
+
 export default function HomeScreen() {
   const router = useRouter()
+  
+  // 画面の状態管理にニックネーム入力と完了モーダルを追加
   const [currentStep, setCurrentStep] = useState<
-    'warning' | 'terms' | 'loading' | 'home'
+    'warning' | 'terms' | 'input_nickname' | 'nickname_completed' | 'loading' | 'home'
   >('warning')
 
   const [randomSubtitle, setRandomSubtitle] = useState('')
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  // ニックネーム入力用のステート
+  const [inputNickname, setInputNickname] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+
+  // すでにセーブデータ（ニックネーム）が存在するかどうか
+  const [hasExistingData, setHasExistingData] = useState(false)
 
   // 背景画像リスト
   const backgroundImages = [
@@ -26,6 +38,21 @@ export default function HomeScreen() {
     require('../../assets/images/stop-text.png'),
     require('../../assets/images/police-car.png'),
   ]
+
+  // 起動時にセーブデータをチェック
+  useEffect(() => {
+    const checkSavedData = async () => {
+      try {
+        const savedData = await loadGameData()
+        if (savedData && savedData.nickname) {
+          setHasExistingData(true)
+        }
+      } catch (error) {
+        console.log('セーブデータの読み込みに失敗しました', error)
+      }
+    }
+    checkSavedData()
+  }, [])
 
   useEffect(() => {
     // サブタイトルの準備
@@ -54,17 +81,55 @@ export default function HomeScreen() {
     return () => clearInterval(slideTimer)
   }, [currentStep])
 
-  // 最初の警告画面から「進む」ボタンが押されたとき
+  // 1. 最初の警告画面から「進む」ボタンが押されたとき
   const handleAcknowledgeWarning = () => {
     setCurrentStep('terms')
   }
 
   // 2. 文書確認モーダルで「同意する」ボタンが押されたとき
   const handleAgreeTerms = () => {
-    setCurrentStep('loading') // ローディング画面へ切り替え
+    // すでにデータがある場合はニックネーム入力をスキップしてローディングへ
+    if (hasExistingData) {
+      setCurrentStep('loading')
+      setTimeout(() => {
+        setCurrentStep('home')
+      }, 1500)
+    } else {
+      // データがない初回起動時はニックネーム入力モーダルへ
+      setCurrentStep('input_nickname')
+    }
+  }
 
-    // 1.5秒のローディング後にトップ画面へ切り替える
-    // （※のちにここに「ニックネームが未登録ならニックネーム入力モーダルを開く」という判定を挟むことになります！）
+  // 3. ニックネームの登録ボタンが押されたとき（バリデーション付き）
+  const handleRegisterNickname = async () => {
+    const trimmed = inputNickname.trim()
+
+    // バリデーション：未記入、または17文字以上の場合
+    if (trimmed.length === 0) {
+      setErrorMessage('ニックネームを入力してください。')
+      return
+    }
+    if (trimmed.length > 16) {
+      setErrorMessage('16文字以内で入力してください。')
+      return
+    }
+
+    setErrorMessage('')
+
+    try {
+      // ストレージに保存
+      await saveGameData({ nickname: trimmed })
+      setHasExistingData(true)
+      // 登録完了モーダルへ
+      setCurrentStep('nickname_completed')
+    } catch (error) {
+      setErrorMessage('データの保存に失敗しました。もう一度お試しください。')
+    }
+  }
+
+  // 4. 登録完了モーダルの「閉じる」ボタンが押されたとき
+  const handleCloseCompletedModal = () => {
+    setCurrentStep('loading')
     setTimeout(() => {
       setCurrentStep('home')
     }, 1500)
@@ -117,7 +182,7 @@ export default function HomeScreen() {
                 >
                   利用規約
                 </Text>{' '}
-                と {/* プライバシーポリシーのリンク */}
+                と{' '}
                 <Text
                   style={styles.linkText}
                   onPress={() => router.push('/privacy-policy')}
@@ -138,7 +203,67 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 3. ローディング画面 */}
+      {/* 3. ニックネーム入力用モーダル（input_nickname_model） */}
+      {currentStep === 'input_nickname' && (
+        <View style={styles.overlayContainer}>
+          <View style={styles.modalBox}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>ニックネームを入力してください。</Text>
+              <TouchableOpacity
+                onPress={() => setCurrentStep('terms')}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.textInput}
+              placeholder="16文字以内で入力"
+              placeholderTextColor="#777777"
+              maxLength={16}
+              value={inputNickname}
+              onChangeText={(text) => {
+                setInputNickname(text)
+                setErrorMessage('')
+              }}
+            />
+
+            {errorMessage ? (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            ) : null}
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleRegisterNickname}
+            >
+              <Text style={styles.buttonText}>登録する</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 4. ニックネーム登録完了モーダル */}
+      {currentStep === 'nickname_completed' && (
+        <View style={styles.overlayContainer}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>登録完了</Text>
+            <Text style={styles.completedText}>
+              ニックネームの登録が完了しました。{'\n'}
+              引き続きゲームをお楽しみください。
+            </Text>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleCloseCompletedModal}
+            >
+              <Text style={styles.buttonText}>閉じる</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 5. ローディング画面 */}
       {currentStep === 'loading' && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="white" />
@@ -146,7 +271,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 4. 通常のトップ画面 */}
+      {/* 6. 通常のトップ画面 */}
       {currentStep === 'home' && (
         <ImageBackground
           source={backgroundImages[currentImageIndex]}
@@ -165,6 +290,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => {
+                // 「はじめから」が押された場合、データをリセットして再度ニックネーム入力をさせたい場合はここで処理可能
                 alert(
                   'ゲームをはじめからプレイします。これまでのデータは削除されます。',
                 )
@@ -189,7 +315,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  // --- モーダル共通の背景（黒半透明・または真っ黒） ---
   overlayContainer: {
     flex: 1,
     backgroundColor: '#000000',
@@ -200,25 +325,45 @@ const styles = StyleSheet.create({
   modalBox: {
     width: '100%',
     maxWidth: 400,
-    maxHeight: '80%',
     backgroundColor: '#1a1a1a',
     padding: 20,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#333333',
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   modalTitle: {
     color: '#ff4d4f',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 15,
     textAlign: 'center',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeButtonText: {
+    color: '#888888',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   modalText: {
     color: '#cccccc',
     fontSize: 14,
     lineHeight: 22,
     textAlign: 'left',
+  },
+  completedText: {
+    color: '#cccccc',
+    fontSize: 15,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   linkText: {
     color: '#1890ff',
@@ -234,6 +379,23 @@ const styles = StyleSheet.create({
   },
   termsScrollContent: {
     paddingRight: 5,
+  },
+  textInput: {
+    backgroundColor: '#111111',
+    borderWidth: 1,
+    borderColor: '#444444',
+    color: '#ffffff',
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 6,
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  errorText: {
+    color: '#ff4d4f',
+    fontSize: 12,
+    marginBottom: 10,
+    textAlign: 'left',
   },
   primaryButton: {
     backgroundColor: '#ff4d4f',
